@@ -22,7 +22,8 @@ function App() {
 const Home = () => {
     return(
         <div>
-            <h1>Home</h1>
+            <h1>Zoran Krstovski</h1>
+            <div>Upload files from computer and send them to OCR API for converting them to plain text</div>
         </div>
         )
 };

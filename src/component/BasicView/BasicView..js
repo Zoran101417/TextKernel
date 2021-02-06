@@ -26,6 +26,8 @@ function BasicView() {
     const [file, setFile] = React.useState();
     const [fileResults, setFileResults] = React.useState();
     const [percent, setPercent] = React.useState(0);
+    const [error, setError] = React.useState(null);
+    const [uploadError, setUploadError] = React.useState(null);
 
     const buttonClassname = clsx({
         [classes.buttonSuccess]: success,
@@ -71,6 +73,8 @@ function BasicView() {
             setLoading(false);
         } catch (err) {
             alert(err.message);
+            setLoading(false);
+            setUploadError(err.message);
         }
     };
 
@@ -83,6 +87,7 @@ function BasicView() {
                     setFileResults(response.data.result);
                 }).catch((error) => {
                     console.log('Error: ', error);
+                    setError(error.toString());
                 });
         } catch (err) {
             alert(err.message);
@@ -149,8 +154,8 @@ function BasicView() {
             <Container maxWidth="md" className={classes.inputContainer}>
                 <Paper elevation={4}>
                     <Grid container>
-                        <Grid item xs={12}>
-                            <h5 align="center">
+                        <Grid item xs={12} className={"uploadedFiles-title"}>
+                            <h5 align="center" >
                                 File Upload
                             </h5>
                             <Divider />
@@ -223,6 +228,11 @@ function BasicView() {
                                                     File Upload Success!{" "}
                                                 </Typography>
                                             )}
+                                            {uploadError && (
+                                                <Typography>
+                                                    {uploadError}
+                                                </Typography>
+                                            )}
 
                                         </Grid>
                                     </Grid>
@@ -260,6 +270,21 @@ function BasicView() {
                     </Grid>
                     </Paper>
                 </Container>
+            }
+            {error &&
+            <Container maxWidth="md" className={"error-container"}>
+                <Paper elevation={4}>
+                    <Grid container>
+                        <Grid item xs={12} className={"error-title"}>
+                            <h5 align="center">
+                                Uploaded files could not be displayed
+                            </h5>
+                            <Divider />
+                            <div>{error}</div>
+                        </Grid>
+                    </Grid>
+                </Paper>
+            </Container>
             }
         </>
     );

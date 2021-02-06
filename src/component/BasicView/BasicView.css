@@ -24,7 +24,7 @@
     padding-top: 12px;
     padding-bottom: 12px;
     text-align: center;
-    background-color: #4CAF50;
+    background-color: #4d63ff;
     color: white;
 }
 
@@ -33,11 +33,22 @@
 }
 
 .uploadedFiles-title {
-    background-color: #80c1c12e;
+    background-color: rgba(78, 194, 168, 0.49);
 }
 
 .upload-container {
     padding-top: 20px;
     height: 350px;
     overflow: auto;
+}
+
+.error-container {
+    padding-top: 20px;
+    height: 350px;
+    overflow: auto;
+}
+
+.error-title {
+    background-color: #ffb4aa;
+    padding-bottom: 20px;
 }
