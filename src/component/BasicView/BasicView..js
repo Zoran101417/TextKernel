@@ -151,7 +151,7 @@ function BasicView() {
     return (
         <>
 
-            <Container maxWidth="md" className={classes.inputContainer}>
+            <Container maxWidth="md" className={classes.inputContainer} style={{ paddingTop: 16 }}>
                 <Paper elevation={4}>
                     <Grid container>
                         <Grid item xs={12} className={"uploadedFiles-title"}>
