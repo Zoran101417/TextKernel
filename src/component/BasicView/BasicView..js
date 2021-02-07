@@ -17,6 +17,8 @@ import clsx from "clsx";
 import { LinearProgress } from "@material-ui/core";
 import axios from "axios";
 import BasicCss from "../BasicView/BasicView.css";
+import useModal from "./useModal";
+import TextModal from "./Modal";
 
 
 function BasicView() {
@@ -28,6 +30,10 @@ function BasicView() {
     const [percent, setPercent] = React.useState(0);
     const [error, setError] = React.useState(null);
     const [uploadError, setUploadError] = React.useState(null);
+    const [convertingError, setConvertingError] = React.useState([]);
+    const [filePlainText, setFilePlainText] = React.useState([]);
+    const [fileName, setFileName] = React.useState([]);
+    const {isShowing, toggle} = useModal();
 
     const buttonClassname = clsx({
         [classes.buttonSuccess]: success,
@@ -68,7 +74,9 @@ function BasicView() {
                     setPercent(percentCompleted);
                 },
             });
-            setFileResults(response.data.result);
+            setFileResults(response.data.result.fileInfoList);
+            setFilePlainText(response.data.result.plainText.ParsedResults);
+            setConvertingError(response.data.result.plainText.ErrorMessage);
             setSuccess(true);
             setLoading(false);
         } catch (err) {
@@ -84,7 +92,10 @@ function BasicView() {
             const getAllFile_URL = "http://localhost:8080/api/files/getUploadedFiles";
             await axios.get(getAllFile_URL)
                 .then((response) => {
-                    setFileResults(response.data.result);
+                    let fileResult = response.data.result;
+                    fileResult = fileResult.filter(file => file.filename !== 'curl.exe');
+                    setFileResults(fileResult);
+                    setError(null);
                 }).catch((error) => {
                     console.log('Error: ', error);
                     setError(error.toString());
@@ -116,41 +127,37 @@ function BasicView() {
         }
     };
 
-    const getPlainText = async (filename) => {
-        // Unfortunately here i get error from api :
-        // Please check if the file has sufficient permissions and allows access and is not corrupt.
-        // I try to solve it with some library like ocr-space-api and ocr-space-api-alt2 but unsuccessful
-        // Same error i get on backend solution also :(
-
-        const API_URL1 = "https://api.ocr.space/parse/imageurl?";
-        const apiKey = 'apikey=5b61727e1588957';
-        const fileUrl = '&url='+filename;
-        const lang = '&language=eng';
-        const filetype = '&filetype=pdf';
-        const isOverlayRequired = '&isOverlayRequired=false';
-        const full_Url = API_URL1 + apiKey + fileUrl + lang + filetype + isOverlayRequired;
-
+    const getPlainText = async (fileName) => {
         try {
 
-            fetch(full_Url)
-                .then(res => res.json())
-                .then(
-                    (result) => {
-                        console.log('result fetch:', result);
-                        alert(result.ParsedResults[0]);
-                    },
-                    (error) => {
-                        console.log('error: ', error);
-                    }
-                )
-            } catch (e) {
-                console.log('exception: ', e);
-            }
+            const getAllFile_URL = "http://localhost:8080/api/files/getPlainTextForFile";
+            await axios.get(getAllFile_URL, { params: {
+                    fileName: fileName
+                }})
+                .then((response) => {
+                    setFilePlainText(response.data.result.ParsedResults);
+                    setError(response.data.result.ErrorMessage);
+                    setFileName(fileName);
+                    toggle();
+                }).catch((error) => {
+                    console.log('Error: ', error);
+                    setError(error.toString());
+                });
+        } catch (err) {
+            alert(err.message);
+        }
     };
+
 
     return (
         <>
 
+            <TextModal
+                isShowing={isShowing}
+                hide={toggle}
+                plainText={filePlainText}
+                file={fileName}
+            />
             <Container maxWidth="md" className={classes.inputContainer} style={{ paddingTop: 16 }}>
                 <Paper elevation={4}>
                     <Grid container>
@@ -296,7 +303,7 @@ const useStyles = makeStyles((theme) => ({
     importContainer: {
         paddingTop: 10,
         height: 30,
-        background: "#d0d0d0",
+        background: "#d8dde0",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
