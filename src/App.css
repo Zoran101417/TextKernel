@@ -6,6 +6,7 @@
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+  overflow: hidden;
 }
 
 nav {
@@ -82,22 +83,26 @@ nav .nav-links a {
   max-width: 500px;
   padding: 2rem;
   display: unset !important;
-  overflow: auto;
+  overflow: auto !important;
+  height: 65%;
+  top: 10% !important;
 }
 
-.modal-header {
+.modal-header-close {
   display: flex;
+  overflow: hidden;
   justify-content: flex-end;
 }
 
 .modal-close-button {
-  font-size: 1.4rem;
+  font-size: 2.4rem;
   font-weight: 700;
   line-height: 1;
   color: #000;
   opacity: .3;
   cursor: pointer;
   border: none;
+  padding-left: 20%;
 }
 
 button {
@@ -114,6 +119,8 @@ button {
   color: #fff;
 }
 
-.text-modal-header {
-  float: left;
+.file-title {
+    padding-bottom: 15px;
+    display: flex;
+    justify-content: center;
 }

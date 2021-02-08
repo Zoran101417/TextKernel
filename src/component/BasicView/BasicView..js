@@ -24,6 +24,7 @@ import TextModal from "./Modal";
 function BasicView() {
     const classes = useStyles();
     const [loading, setLoading] = React.useState(false);
+    const [allowed, setAllowed] = React.useState(false);
     const [success, setSuccess] = React.useState(false);
     const [file, setFile] = React.useState();
     const [fileResults, setFileResults] = React.useState();
@@ -34,6 +35,9 @@ function BasicView() {
     const [filePlainText, setFilePlainText] = React.useState([]);
     const [fileName, setFileName] = React.useState([]);
     const {isShowing, toggle} = useModal();
+
+    const allowedExt = ['pdf', 'txt', 'jpg', 'jpeg', 'gif', 'bmp', 'png'];
+    const re = /(?:\.([^.]+))?$/;
 
     const buttonClassname = clsx({
         [classes.buttonSuccess]: success,
@@ -49,6 +53,7 @@ function BasicView() {
         const fileDropped = acceptedFiles[0];
         setFile(fileDropped);
         setSuccess(false);
+        setAllowed(true);
         setPercent(0);
     });
 
@@ -61,24 +66,41 @@ function BasicView() {
 
     const uploadFile = async () => {
         try {
-            setSuccess(false);
-            setLoading(true);
-            const formData = new FormData();
-            formData.append("file", file);
-            const Upload_URL = "http://localhost:8080/api/files/upload";
-            const response = await axios.put(Upload_URL, formData, {
-                onUploadProgress: (progressEvent) => {
-                    const percentCompleted = Math.round(
-                        (progressEvent.loaded * 100) / progressEvent.total
-                    );
-                    setPercent(percentCompleted);
-                },
-            });
-            setFileResults(response.data.result.fileInfoList);
-            setFilePlainText(response.data.result.plainText.ParsedResults);
-            setConvertingError(response.data.result.plainText.ErrorMessage);
-            setSuccess(true);
-            setLoading(false);
+
+            const ext = re.exec(file.path)[1];
+            const isAllowedExt = allowedExt.indexOf(ext.toLowerCase());
+            if (isAllowedExt > -1) {
+                setSuccess(false);
+                setLoading(true);
+                setAllowed(true);
+                const formData = new FormData();
+                formData.append("file", file);
+                formData.append("extension", ext.toLowerCase());
+                const Upload_URL = "http://localhost:8080/api/files/upload";
+                const response = await axios.put(Upload_URL, formData, {
+                    onUploadProgress: (progressEvent) => {
+                        const percentCompleted = Math.round(
+                            (progressEvent.loaded * 100) / progressEvent.total
+                        );
+                        setPercent(percentCompleted);
+                    },
+                });
+
+                if (response.data.result !== null) {
+                    let fileResult = response.data.result.fileInfoList;
+                    fileResult = fileResult.filter(file => file.filename !== 'curl.exe');
+                    setFileResults(fileResult);
+                    await setPlainText(response, file.name);
+                }
+                setFilePlainText(response.data.result.plainText.ParsedResults);
+                setConvertingError(response.data.result.plainText.ErrorMessage);
+                setSuccess(true);
+                setLoading(false);
+            } else {
+                setFile([]);
+                setAllowed(false);
+                alert('This file type is not supported');
+            }
         } catch (err) {
             alert(err.message);
             setLoading(false);
@@ -129,34 +151,54 @@ function BasicView() {
 
     const getPlainText = async (fileName) => {
         try {
-
+            const ext = re.exec(fileName)[1];
+            const isAllowedExt = allowedExt.indexOf(ext.toLowerCase());
+            if (isAllowedExt > -1) {
             const getAllFile_URL = "http://localhost:8080/api/files/getPlainTextForFile";
             await axios.get(getAllFile_URL, { params: {
-                    fileName: fileName
+                    fileName: fileName,
+                    extension: ext.toLowerCase()
                 }})
                 .then((response) => {
-                    setFilePlainText(response.data.result.ParsedResults);
-                    setError(response.data.result.ErrorMessage);
-                    setFileName(fileName);
-                    toggle();
+                    if (response.data.result !== null) {
+                        setPlainText(response, fileName);
+                    }
                 }).catch((error) => {
                     console.log('Error: ', error);
-                    setError(error.toString());
+                    setConvertingError(error.toString());
                 });
+            } else {
+                alert('This file type is not supported');
+            }
         } catch (err) {
+            setError(err.toString());
             alert(err.message);
+        }
+    };
+
+    const setPlainText = async (response, fileName) => {
+        if (response.data.result !== null) {
+            setFilePlainText(response.data.result.ParsedResults);
+            setError(response.data.result.ErrorMessage);
+            setFileName(fileName);
+            toggle();
+        } else {
+            const ParsedText = {ParsedText: 'There is no available text for this file !'};
+            setFilePlainText([ParsedText]);
+            setFileName(fileName);
+            toggle();
         }
     };
 
 
     return (
         <>
-
             <TextModal
                 isShowing={isShowing}
                 hide={toggle}
                 plainText={filePlainText}
                 file={fileName}
+                error={convertingError}
             />
             <Container maxWidth="md" className={classes.inputContainer} style={{ paddingTop: 16 }}>
                 <Paper elevation={4}>
@@ -191,6 +233,8 @@ function BasicView() {
                                     >
                                         <Grid item xs={2}>
                                             <div className={classes.wrapper}>
+                                                {allowed &&
+
                                                 <Fab size="small"
                                                     aria-label="save"
                                                     color="primary"
@@ -199,6 +243,7 @@ function BasicView() {
                                                 >
                                                     {success ? <CheckIcon /> : <CloudUpload />}
                                                 </Fab>
+                                                }
                                                 {loading && (
                                                     <CircularProgress
                                                         size={48}
@@ -283,10 +328,6 @@ function BasicView() {
                 <Paper elevation={4}>
                     <Grid container>
                         <Grid item xs={12} className={"error-title"}>
-                            <h5 align="center">
-                                Uploaded files could not be displayed
-                            </h5>
-                            <Divider />
                             <div>{error}</div>
                         </Grid>
                     </Grid>

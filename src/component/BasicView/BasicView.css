@@ -52,4 +52,11 @@
 .error-title {
     background-color: #ffb4aa;
     padding-bottom: 20px;
+    padding-top: 20px;
+}
+
+.file-header {
+    display: flex;
+    overflow: hidden;
+    justify-content: center;
 }
