@@ -17,9 +17,9 @@ import clsx from "clsx";
 import { LinearProgress } from "@material-ui/core";
 import axios from "axios";
 import BasicCss from "../BasicView/BasicView.css";
-import useModal from "./useModal";
-import TextModal from "./Modal";
-
+import useModal from "../Modal/useModal";
+import TextModal from "../Modal/Modal";
+import { LoopCircleLoading  } from 'react-loadingg';
 
 function BasicView() {
     const classes = useStyles();
@@ -34,6 +34,7 @@ function BasicView() {
     const [convertingError, setConvertingError] = React.useState([]);
     const [filePlainText, setFilePlainText] = React.useState([]);
     const [fileName, setFileName] = React.useState([]);
+    const [showSpinner, setSpinner] = React.useState(false);
     const {isShowing, toggle} = useModal();
 
     const allowedExt = ['pdf', 'txt', 'jpg', 'jpeg', 'gif', 'bmp', 'png'];
@@ -76,6 +77,7 @@ function BasicView() {
                 const formData = new FormData();
                 formData.append("file", file);
                 formData.append("extension", ext.toLowerCase());
+                setSpinner(true);
                 const Upload_URL = "http://localhost:8080/api/files/upload";
                 const response = await axios.put(Upload_URL, formData, {
                     onUploadProgress: (progressEvent) => {
@@ -96,21 +98,24 @@ function BasicView() {
                 setConvertingError(response.data.result.plainText.ErrorMessage);
                 setSuccess(true);
                 setLoading(false);
+                setSpinner(false);
             } else {
                 setFile([]);
                 setAllowed(false);
                 alert('This file type is not supported');
+                setSpinner(false);
             }
         } catch (err) {
             alert(err.message);
             setLoading(false);
             setUploadError(err.message);
+            setSpinner(false);
         }
     };
 
     const getUploadedFiles = async () => {
         try {
-
+            setSpinner(true);
             const getAllFile_URL = "http://localhost:8080/api/files/getUploadedFiles";
             await axios.get(getAllFile_URL)
                 .then((response) => {
@@ -118,12 +123,15 @@ function BasicView() {
                     fileResult = fileResult.filter(file => file.filename !== 'curl.exe');
                     setFileResults(fileResult);
                     setError(null);
+                    setSpinner(false);
                 }).catch((error) => {
                     console.log('Error: ', error);
                     setError(error.toString());
+                    setSpinner(false);
                 });
         } catch (err) {
             alert(err.message);
+            setSpinner(false);
         }
     };
 
@@ -155,6 +163,7 @@ function BasicView() {
             const isAllowedExt = allowedExt.indexOf(ext.toLowerCase());
             if (isAllowedExt > -1) {
             const getAllFile_URL = "http://localhost:8080/api/files/getPlainTextForFile";
+            setSpinner(true);
             await axios.get(getAllFile_URL, { params: {
                     fileName: fileName,
                     extension: ext.toLowerCase()
@@ -163,15 +172,19 @@ function BasicView() {
                     if (response.data.result !== null) {
                         setPlainText(response, fileName);
                     }
+                    setSpinner(false);
                 }).catch((error) => {
                     console.log('Error: ', error);
                     setConvertingError(error.toString());
+                    setSpinner(false);
                 });
             } else {
+                setSpinner(false);
                 alert('This file type is not supported');
             }
         } catch (err) {
             setError(err.toString());
+            setSpinner(false);
             alert(err.message);
         }
     };
@@ -193,6 +206,9 @@ function BasicView() {
 
     return (
         <>
+            {showSpinner &&
+            <LoopCircleLoading  />
+            }
             <TextModal
                 isShowing={isShowing}
                 hide={toggle}

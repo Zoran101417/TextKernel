@@ -1,6 +1,6 @@
 .App {
   text-align: center;
-  background-color: #4CAF50;
+  background: linear-gradient(#e66465, #9198e5);
   height: 100vh;
   min-height : 100vh;
   box-sizing: border-box;
@@ -92,6 +92,7 @@ nav .nav-links a {
   display: flex;
   overflow: hidden;
   justify-content: flex-end;
+  background-color: antiquewhite;
 }
 
 .modal-close-button {
